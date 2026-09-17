@@ -1,0 +1,2417 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melior — Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r160/three.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: '#F4EFE5',
+                        emerald: '#062619',
+                        jungle: '#0A5136',
+                        gold: '#D9B57C',
+                        accent: '#0EAB6A',
+                    },
+                    fontFamily: {
+                        display: ['Fraunces', 'serif'],
+                        body: ['Manrope', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --bg: #062619;
+            --surface: #0A5136;
+            --surface-light: #0D6040;
+            --gold: #D9B57C;
+            --accent: #0EAB6A;
+            --text: #F4EFE5;
+            --muted: rgba(244, 239, 229, 0.62);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background:
+                radial-gradient(circle at 15% 10%,
+                    rgba(14, 171, 106, 0.08),
+                    transparent 28%),
+                radial-gradient(circle at 85% 65%,
+                    rgba(217, 181, 124, 0.06),
+                    transparent 30%),
+                var(--bg);
+
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        .font-display {
+            font-family: 'Fraunces', serif;
+        }
+
+        /* =====================================================
+     AMBIENT BACKGROUND
+  ===================================================== */
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+
+            background:
+                radial-gradient(circle at 50% 0%,
+                    rgba(14, 171, 106, 0.06),
+                    transparent 35%);
+
+            animation: ambientMove 12s ease-in-out infinite alternate;
+        }
+
+        @keyframes ambientMove {
+            from {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+
+            to {
+                transform: scale(1.08);
+                opacity: 1;
+            }
+        }
+
+        /* =====================================================
+     INTRO
+  ===================================================== */
+
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+
+            background: var(--accent);
+
+            border-radius: 50%;
+
+            box-shadow:
+                0 0 8px 2px rgba(14, 171, 106, 0.7);
+
+            animation: twinkle 2.4s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0% {
+                opacity: 0;
+                transform: translate(0, 0) scale(0.4);
+            }
+
+            50% {
+                opacity: 1;
+                transform: translate(6px, -8px) scale(1.2);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-5px, 5px) scale(0.4);
+            }
+        }
+
+        #intro-screen {
+            background:
+                radial-gradient(circle at center,
+                    #0A5136 0%,
+                    #062619 45%,
+                    #020b07 100%);
+        }
+
+        #main-content {
+            transition: opacity 0.8s ease;
+            /* =====================================================
+   CINEMATIC WELCOME — BIENVENUE
+===================================================== */
+
+#welcome-particles {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.welcome-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #0EAB6A;
+    box-shadow:
+        0 0 6px rgba(14, 171, 106, 0.95),
+        0 0 18px rgba(14, 171, 106, 0.55),
+        0 0 32px rgba(217, 181, 124, 0.18);
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.2);
+    will-change: transform, opacity;
+}
+
+#welcome-word {
+    position: absolute;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(2px, 0.7vw, 9px);
+    width: 100%;
+    padding: 0 20px;
+    opacity: 0;
+    transform: scale(0.92);
+    filter: blur(8px);
+    transition:
+        opacity 0.8s ease,
+        transform 1.2s cubic-bezier(.22, 1, .36, 1),
+        filter 1s ease;
+}
+
+#welcome-word.is-visible {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+}
+
+.welcome-letter {
+    display: inline-block;
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2.2rem, 7vw, 6rem);
+    line-height: 1;
+    color: #D9B57C;
+    text-shadow:
+        0 0 12px rgba(217, 181, 124, 0.25),
+        0 0 35px rgba(14, 171, 106, 0.18);
+    opacity: 0;
+    transform:
+        translate3d(
+            var(--start-x, 0px),
+            var(--start-y, 0px),
+            0
+        )
+        scale(0.3);
+    filter: blur(5px);
+    transition:
+        opacity 0.7s ease,
+        transform 1s cubic-bezier(.22, 1, .36, 1),
+        filter 0.9s ease;
+}
+
+.welcome-letter.is-formed {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+}
+
+#welcome-glow {
+    position: absolute;
+    width: min(70vw, 700px);
+    height: min(40vw, 400px);
+    border-radius: 50%;
+    background:
+        radial-gradient(
+            ellipse,
+            rgba(14, 171, 106, 0.16) 0%,
+            rgba(14, 171, 106, 0.07) 35%,
+            transparent 72%
+        );
+    filter: blur(30px);
+    opacity: 0;
+    transform: scale(0.7);
+    pointer-events: none;
+    z-index: 2;
+    transition:
+        opacity 1.2s ease,
+        transform 1.8s cubic-bezier(.22, 1, .36, 1);
+}
+
+#welcome-glow.is-active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+#intro-text {
+    opacity: 0;
+    transform: scale(0.8);
+    filter: blur(10px);
+    transition:
+        opacity 1s ease,
+        transform 1.4s cubic-bezier(.22, 1, .36, 1),
+        filter 1s ease;
+    pointer-events: none;
+}
+
+#intro-text.is-revealed {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+}
+
+@media (max-width: 640px) {
+    #welcome-word {
+        gap: 2px;
+        padding: 0 10px;
+    }
+
+    .welcome-letter {
+        font-size: clamp(1.8rem, 9vw, 3.4rem);
+    }
+
+    .welcome-particle {
+        width: 3px;
+        height: 3px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #welcome-particles {
+        display: none;
+    }
+
+    #welcome-word {
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
+
+    .welcome-letter {
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
+}
+        }
+
+        /* =====================================================
+     BENTO CARDS
+  ===================================================== */
+
+        .bento-card {
+            position: relative;
+
+            opacity: 0;
+            transform: translateY(28px);
+
+            transition:
+                opacity 0.7s ease,
+                transform 0.7s ease,
+                box-shadow 0.35s ease,
+                border-color 0.35s ease;
+
+            overflow: hidden;
+        }
+
+        .bento-card.in-view {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /*
+    Lumière qui suit la souris
+  */
+
+        .bento-card::before {
+            content: "";
+
+            position: absolute;
+
+            width: 280px;
+            height: 280px;
+
+            left: var(--mouse-x, 50%);
+            top: var(--mouse-y, 50%);
+
+            transform: translate(-50%, -50%);
+
+            background:
+                radial-gradient(circle,
+                    rgba(14, 171, 106, 0.12),
+                    transparent 65%);
+
+            pointer-events: none;
+
+            opacity: 0;
+
+            transition: opacity 0.3s ease;
+        }
+
+        .bento-card:hover::before {
+            opacity: 1;
+        }
+
+        .tilt-card {
+            will-change: transform;
+
+            transition:
+                transform 0.15s ease,
+                opacity 0.7s ease,
+                box-shadow 0.35s ease,
+                border-color 0.35s ease;
+        }
+
+        .tilt-card:hover {
+            box-shadow:
+                0 25px 60px rgba(0, 0, 0, 0.28),
+                0 0 30px rgba(14, 171, 106, 0.07);
+
+            border-color: rgba(217, 181, 124, 0.45);
+        }
+
+        .tilt-card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0;
+            transition: opacity 0.35s ease;
+        }
+
+        .tilt-card:hover::after {
+            opacity: 0.85;
+        }
+
+        /* =====================================================
+     PROJECT VISUALS
+  ===================================================== */
+
+        .project-visual-1 {
+            background:
+                radial-gradient(circle at 25% 30%,
+                    rgba(217, 181, 124, 0.45),
+                    transparent 60%),
+                radial-gradient(circle at 85% 75%,
+                    rgba(14, 171, 106, 0.25),
+                    transparent 55%),
+                #062619;
+        }
+
+        .project-visual-2 {
+            background:
+                radial-gradient(circle at 75% 25%,
+                    rgba(217, 181, 124, 0.4),
+                    transparent 55%),
+                radial-gradient(circle at 20% 80%,
+                    rgba(10, 81, 54, 0.8),
+                    transparent 60%),
+                #062619;
+        }
+
+        .project-visual svg {
+            stroke: var(--gold) !important;
+            opacity: 0.65 !important;
+        }
+
+        .project-desc:empty {
+            display: none;
+        }
+
+        .project-tag {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+            color: var(--gold);
+            background: rgba(217, 181, 124, 0.1);
+            border: 1px solid rgba(217, 181, 124, 0.25);
+        }
+
+        /* =====================================================
+     CURSOR GLOW
+  ===================================================== */
+
+        #cursor-glow {
+            position: fixed;
+
+            width: 360px;
+            height: 360px;
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(circle,
+                    rgba(14, 171, 106, 0.08),
+                    rgba(217, 181, 124, 0.03),
+                    transparent 70%);
+
+            pointer-events: none;
+
+            transform: translate(-50%, -50%);
+
+            z-index: 40;
+
+            transition: opacity 0.3s ease;
+
+            opacity: 0;
+
+            mix-blend-mode: screen;
+        }
+
+        /* =====================================================
+     BOTTOM DOCK
+  ===================================================== */
+
+        .bottom-dock-wrapper {
+            position: fixed;
+
+            left: 50%;
+            bottom: 24px;
+
+            transform: translateX(-50%);
+
+            z-index: 90;
+        }
+
+        .bottom-dock {
+            position: relative;
+
+            display: flex;
+            align-items: center;
+
+            padding: 8px;
+
+            min-width: 320px;
+
+            border-radius: 22px;
+
+            background:
+                rgba(6, 38, 25, 0.78);
+
+            border:
+                1px solid rgba(217, 181, 124, 0.18);
+
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+            isolation: isolate;
+        }
+
+        /*
+    Couche utilisée pour le gooey effect
+  */
+
+        .dock-goo {
+            position: absolute;
+
+            inset: 8px;
+
+            pointer-events: none;
+
+            filter: blur(14px) contrast(180%);
+
+            z-index: -1;
+        }
+
+        .dock-goo::after {
+            content: "";
+
+            position: absolute;
+
+            top: 0;
+            left: var(--goo-x, 0px);
+
+            width: 58px;
+            height: 58px;
+
+            border-radius: 18px;
+
+            background: var(--accent);
+
+            transition:
+                left 0.22s cubic-bezier(.4, 0, .2, 1);
+
+            opacity: 0.9;
+        }
+
+        .dock-item {
+            position: relative;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            width: 70px;
+            height: 58px;
+
+            border-radius: 18px;
+
+            color: rgba(244, 239, 229, 0.55);
+
+            text-decoration: none;
+
+            transition:
+                color 0.3s ease,
+                transform 0.3s ease;
+        }
+
+        .dock-item:hover {
+            color: var(--gold);
+            transform: translateY(-3px);
+        }
+
+        .dock-item.active {
+            color: var(--text);
+        }
+
+        .dock-icon {
+            font-size: 17px;
+
+            line-height: 1;
+
+            margin-bottom: 4px;
+        }
+
+        .dock-label {
+            font-size: 9px;
+
+            letter-spacing: 0.08em;
+
+            text-transform: uppercase;
+
+            opacity: 0.75;
+        }
+
+        .dock-active-indicator {
+            position: absolute;
+
+            bottom: -3px;
+
+            left: 0;
+
+            width: 5px;
+            height: 5px;
+
+            border-radius: 50%;
+
+            background: var(--gold);
+
+            box-shadow:
+                0 0 6px rgba(217, 181, 124, 0.8),
+                0 0 14px rgba(217, 181, 124, 0.35);
+
+            transform: translateX(-50%);
+
+            pointer-events: none;
+
+            transition:
+                left 0.22s cubic-bezier(.4, 0, .2, 1);
+        }
+
+        /* =====================================================
+     SECTION NUMBER
+  ===================================================== */
+
+        .section-number {
+            font-size: 10px;
+
+            letter-spacing: 0.22em;
+
+            color: var(--gold);
+
+            opacity: 0.75;
+        }
+
+        /* =====================================================
+     MOBILE
+  ===================================================== */
+
+        @media (max-width: 640px) {
+
+            .bottom-dock-wrapper {
+                bottom: 14px;
+
+                width: calc(100% - 28px);
+            }
+
+            .bottom-dock {
+                width: 100%;
+                min-width: 0;
+
+                justify-content: space-around;
+
+                border-radius: 20px;
+            }
+
+            .dock-item {
+                width: 60px;
+            }
+
+            .dock-label {
+                font-size: 8px;
+            }
+
+            #cursor-glow {
+                display: none;
+            }
+        }
+
+        /* =====================================================
+     ACCESSIBILITY
+  ===================================================== */
+
+        @media (prefers-reduced-motion: reduce) {
+
+            html {
+                scroll-behavior: auto;
+            }
+
+            .bento-card,
+            #main-content,
+            .sparkle,
+            .dock-item,
+            .dock-goo::after,
+            .dock-active-indicator {
+                transition: none !important;
+                animation: none !important;
+            }
+
+            .bento-card {
+                opacity: 1 !important;
+                transform: none !important;
+            }
+
+            body::before {
+                animation: none !important;
+            }
+        }
+
+        /* =====================================================
+   HERO
+===================================================== */
+
+        #home {
+            isolation: isolate;
+        }
+
+        #home::before {
+            content: "";
+
+            position: absolute;
+
+            width: 600px;
+            height: 600px;
+
+            right: -180px;
+            top: 50%;
+
+            transform: translateY(-50%);
+
+            background:
+                radial-gradient(circle,
+                    rgba(14, 171, 106, 0.09),
+                    transparent 68%);
+
+            filter: blur(20px);
+
+            pointer-events: none;
+
+            z-index: -1;
+        }
+
+        #home h1 {
+            text-shadow:
+                0 0 60px rgba(14, 171, 106, 0.08);
+        }
+
+        @media (max-width: 640px) {
+
+            #home::before {
+                width: 350px;
+                height: 350px;
+
+                right: -160px;
+            }
+
+        }
+
+        /* =====================================================
+   PORTFOLIO SCENES — ÉTAPE 1
+   Chaque section devient un véritable écran
+===================================================== */
+
+        .portfolio-scenes {
+            width: 100%;
+        }
+
+        .portfolio-scene {
+            position: relative;
+
+            width: 100%;
+            min-height: 100vh;
+
+            padding: 120px 6vw;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+
+            overflow: hidden;
+
+            box-sizing: border-box;
+        }
+
+        /* =====================================================
+   SCENE TRANSITIONS — ÉTAPE 1
+===================================================== */
+
+        .portfolio-scene {
+            isolation: isolate;
+        }
+
+        /* Halo organique très subtil entre les scènes */
+        .portfolio-scene::before {
+            content: "";
+            position: absolute;
+            inset: -20%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0;
+            transform: scale(0.96);
+            transition:
+                opacity 1.2s ease,
+                transform 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+            background:
+                radial-gradient(circle at 50% 45%,
+                    rgba(14, 171, 106, 0.08),
+                    transparent 42%);
+        }
+
+        /* =====================================================
+   FIREFLY — ÉTAPE 2A
+===================================================== */
+
+        #portfolio-firefly {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            width: 8px;
+            height: 8px;
+            z-index: 20;
+            pointer-events: none;
+            opacity: 0.9;
+            transform: translate(-50%, -50%);
+        }
+
+        .firefly-core {
+            position: absolute;
+            inset: 2px;
+            border-radius: 50%;
+            background: #0EAB6A;
+            box-shadow:
+                0 0 6px rgba(14, 171, 106, 0.9),
+                0 0 14px rgba(14, 171, 106, 0.55);
+        }
+
+        .firefly-halo {
+            position: absolute;
+            inset: -7px;
+            border-radius: 50%;
+            background: radial-gradient(circle,
+                    rgba(217, 181, 124, 0.28) 0%,
+                    rgba(14, 171, 106, 0.14) 35%,
+                    transparent 72%);
+            filter: blur(2px);
+            animation: fireflyPulse 2.4s ease-in-out infinite;
+        }
+
+        @keyframes fireflyPulse {
+
+            0%,
+            100% {
+                transform: scale(0.85);
+                opacity: 0.65;
+            }
+
+            50% {
+                transform: scale(1.15);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 640px) {
+            #portfolio-firefly {
+                width: 7px;
+                height: 7px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #portfolio-firefly {
+                display: none;
+            }
+
+            .firefly-halo {
+                animation: none;
+            }
+        }
+
+        /* La scène devient progressivement "vivante" lorsqu'elle entre dans le viewport */
+        .portfolio-scene.scene-visible::before {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Légère profondeur pendant le passage */
+        .portfolio-scene>* {
+            transition:
+                opacity 0.9s ease,
+                transform 1s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .portfolio-scene:not(.scene-visible)>* {
+            opacity: 0.72;
+            transform: translateY(18px);
+        }
+
+        .portfolio-scene.scene-visible>* {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Respect du mode accessibilité */
+        @media (prefers-reduced-motion: reduce) {
+
+            .portfolio-scene::before,
+            .portfolio-scene>* {
+                transition: none;
+                transform: none;
+            }
+
+            .portfolio-scene:not(.scene-visible)>* {
+                opacity: 1;
+            }
+        }
+
+        /* ABOUT */
+
+        .scene-about {
+            background:
+                radial-gradient(circle at 20% 40%,
+                    rgba(14, 171, 106, 0.07),
+                    transparent 35%);
+        }
+
+        /* SKILLS */
+
+        .scene-skills {
+            background:
+                radial-gradient(circle at 80% 30%,
+                    rgba(217, 181, 124, 0.06),
+                    transparent 35%);
+        }
+
+        /* PROJECTS */
+
+        .scene-projects {
+            background:
+                radial-gradient(circle at 30% 70%,
+                    rgba(14, 171, 106, 0.06),
+                    transparent 40%);
+        }
+
+        /* CONTACT */
+
+        .scene-contact {
+            background:
+                radial-gradient(circle at 70% 50%,
+                    rgba(217, 181, 124, 0.07),
+                    transparent 40%);
+        }
+
+        /* Mobile */
+
+        @media (max-width: 640px) {
+
+            .portfolio-scene {
+                min-height: 100svh;
+                padding: 100px 24px;
+            }
+
+        }
+
+        /* =====================================================
+   CINEMATIC SECTIONS — ÉTAPE 1
+   Chaque section possède son propre espace
+===================================================== */
+
+        #portfolio-content {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Chaque scène occupe au minimum un écran */
+
+        #about,
+        #skills,
+        #projects,
+        #contact {
+            min-height: 100vh;
+            position: relative;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+
+            padding-top: 100px;
+            padding-bottom: 140px;
+        }
+
+        /* Le Hero possède déjà son écran */
+
+        #home {
+            min-height: 100vh;
+        }
+
+        /* =====================================================
+   ESPACE ENTRE LES SCÈNES
+===================================================== */
+
+        #about {
+            margin-top: 0;
+        }
+
+        #skills {
+            margin-top: 0;
+        }
+
+        #projects {
+            margin-top: 0;
+        }
+
+        #contact {
+            margin-top: 0;
+        }
+
+        /* =====================================================
+   MOBILE
+===================================================== */
+
+        @media (max-width: 640px) {
+
+            #about,
+            #skills,
+            #projects,
+            #contact {
+                min-height: 100svh;
+                padding-top: 90px;
+                padding-bottom: 120px;
+            }
+
+        }
+
+        /* =====================================================
+           SERPENT NARRATIF
+        ===================================================== */
+
+        #main-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        #cinematic-scene {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        #cinematic-scene::before {
+            content: "";
+            position: absolute;
+            width: 360px;
+            height: 360px;
+            left: var(--serpent-x, -500px);
+            top: var(--serpent-y, -500px);
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(14, 235, 140, 0.13), rgba(14, 171, 106, 0.035) 38%, transparent 70%);
+            filter: blur(14px);
+            opacity: var(--serpent-energy, 0);
+            transition: opacity 0.45s ease;
+        }
+
+        #serpent-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .serpent-reactive {
+            transition: filter 0.45s ease, text-shadow 0.45s ease, box-shadow 0.45s ease;
+        }
+
+        .serpent-charged {
+            filter: brightness(1.12);
+            text-shadow: 0 0 18px rgba(14, 235, 140, 0.4);
+            box-shadow: 0 0 28px rgba(14, 235, 140, 0.12);
+        }
+
+        @media (max-width: 640px) {
+            #cinematic-scene {
+                opacity: 0.8;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #cinematic-scene {
+                display: none;
+            }
+        }
+
+        /* =====================================================
+   HERO — ÉTAPE 3A
+   Lignes organiques cinématiques
+===================================================== */
+
+        #home {
+            position: relative;
+            overflow: hidden;
+        }
+
+
+
+
+        /* Le contenu reste au-dessus des lignes */
+        #home>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Accessibilité */
+        @media (prefers-reduced-motion: reduce) {
+
+            #home::before,
+            #home::after {
+                animation: none;
+            }
+        }
+
+        /* =====================================================
+   HERO — ÉTAPE 3A — CORRECTION
+   Lignes organiques visibles
+===================================================== */
+
+        #home {
+            isolation: isolate;
+        }
+
+        #home::before,
+        #home::after {
+            content: "";
+            position: absolute;
+            pointer-events: none;
+            display: block;
+            z-index: 0;
+            border-radius: 50%;
+        }
+
+        /* Ligne organique supérieure */
+        #home::before {
+            width: 900px;
+            height: 320px;
+
+            top: 8%;
+            right: -220px;
+
+            border: 1px solid rgba(217, 181, 124, 0.22);
+            border-left-color: transparent;
+            border-bottom-color: transparent;
+
+            transform: rotate(-12deg);
+
+            animation: heroLineFloat 12s ease-in-out infinite alternate;
+        }
+
+        /* Ligne organique inférieure */
+        #home::after {
+            width: 750px;
+            height: 280px;
+
+            bottom: 2%;
+            left: -220px;
+
+            border: 1px solid rgba(14, 171, 106, 0.20);
+            border-right-color: transparent;
+            border-top-color: transparent;
+
+            transform: rotate(10deg);
+
+            animation: heroLineFloatReverse 15s ease-in-out infinite alternate;
+        }
+
+        /* Animation très lente */
+        @keyframes heroLineFloat {
+
+            from {
+                transform: rotate(-12deg) translate3d(0, 0, 0);
+            }
+
+            to {
+                transform: rotate(-9deg) translate3d(-20px, 12px, 0);
+            }
+        }
+
+        @keyframes heroLineFloatReverse {
+
+            from {
+                transform: rotate(10deg) translate3d(0, 0, 0);
+            }
+
+            to {
+                transform: rotate(7deg) translate3d(20px, -10px, 0);
+            }
+        }
+
+        /* Le contenu du Hero reste au-dessus */
+        #home>div {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Le canvas reste derrière */
+        #home>canvas {
+            z-index: 1;
+        }
+
+        /* Mobile */
+        @media (max-width: 640px) {
+
+            #home::before {
+                width: 600px;
+                height: 240px;
+                right: -300px;
+            }
+
+            #home::after {
+                width: 550px;
+                height: 220px;
+                left: -300px;
+            }
+        }
+
+        /* Accessibilité */
+        @media (prefers-reduced-motion: reduce) {
+
+            #home::before,
+            #home::after {
+                animation: none;
+            }
+        }
+
+        /* =====================================================
+   HERO — ÉTAPE 3A
+   LIGNES ORGANIQUES
+===================================================== */
+
+        .hero-organic-lines {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .hero-line {
+            position: absolute;
+            display: block;
+            width: 9000px;
+            height: 340px;
+            border-radius: 50%;
+        }
+
+        /* Ligne dorée — haut / droite */
+        .hero-line-gold {
+            top: 4%;
+            right: -280px;
+
+            border: 2px solid rgba(217, 181, 124, 0.48);
+            box-shadow:
+                0 0 12px rgba(217, 181, 124, 0.10),
+                0 0 30px rgba(217, 181, 124, 0.05);
+            border-left-color: transparent;
+            border-bottom-color: transparent;
+
+            transform: rotate(-14deg);
+
+            animation:
+                heroGoldFloat 10s ease-in-out infinite alternate;
+        }
+
+        /* Ligne verte — bas / gauche */
+        .hero-line-green {
+            bottom: 0;
+            left: -280px;
+
+
+            border: 2px solid rgba(14, 171, 106, 0.42);
+
+            border-right-color: transparent;
+            border-top-color: transparent;
+
+            transform: rotate(12deg);
+
+            animation:
+                heroGreenFloat 13s ease-in-out infinite alternate;
+        }
+
+        @keyframes heroGoldFloat {
+            from {
+                transform: rotate(-14deg) translate3d(0, 0, 0);
+            }
+
+            to {
+                transform: rotate(-10deg) translate3d(-25px, 15px, 0);
+            }
+        }
+
+        @keyframes heroGreenFloat {
+            from {
+                transform: rotate(12deg) translate3d(0, 0, 0);
+            }
+
+            to {
+                transform: rotate(8deg) translate3d(25px, -15px, 0);
+            }
+        }
+
+        /* Canvas au-dessus des lignes */
+        #hero-3d {
+            z-index: 2;
+        }
+
+        /* Contenu du Hero au-dessus de tout */
+        #home>div:not(.hero-organic-lines) {
+            z-index: 3;
+        }
+
+        /* Mobile */
+        @media (max-width: 640px) {
+
+            .hero-line {
+                width: 600px;
+                height: 230px;
+            }
+
+            .hero-line-gold {
+                right: -330px;
+            }
+
+            .hero-line-green {
+                left: -330px;
+            }
+        }
+
+        /* Accessibilité */
+        @media (prefers-reduced-motion: reduce) {
+
+            .hero-line-gold,
+            .hero-line-green {
+                animation: none;
+            }
+        }
+
+        /* =====================================================
+   HERO — 4 PILIERS
+===================================================== */
+
+        .hero-pillars {
+            display: flex;
+            align-items: stretch;
+            gap: 10px;
+            margin-top: 28px;
+            width: 100%;
+            max-width: 780px;
+        }
+
+        .hero-pillar {
+            position: relative;
+            flex: 1;
+            min-height: 72px;
+
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+
+            padding: 14px 16px;
+
+            border: 1px solid rgba(217, 181, 124, 0.20);
+
+            background:
+                linear-gradient(145deg,
+                    rgba(255, 255, 255, 0.055),
+                    rgba(255, 255, 255, 0.018));
+
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+
+            overflow: hidden;
+
+            transition:
+                transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.35s ease,
+                background 0.35s ease,
+                box-shadow 0.35s ease;
+        }
+
+        .hero-pillar:nth-child(1) {
+            border-radius: 24px 14px 20px 30px;
+        }
+
+        .hero-pillar:nth-child(2) {
+            border-radius: 14px 28px 30px 18px;
+        }
+
+        .hero-pillar:nth-child(3) {
+            border-radius: 30px 20px 26px 26px;
+        }
+
+        .hero-pillar:nth-child(4) {
+            border-radius: 18px 30px 18px 28px;
+        }
+
+        .hero-pillar-number {
+            position: relative;
+            z-index: 2;
+            font-size: 9px;
+            letter-spacing: .18em;
+            color: rgba(217, 181, 124, .55);
+        }
+
+        .hero-pillar-name {
+            position: relative;
+            z-index: 2;
+            font-size: 13px;
+            color: rgba(244, 239, 229, .82);
+
+            transition:
+                transform .35s ease,
+                color .35s ease;
+        }
+
+        .hero-pillar::before {
+            content: "";
+            position: absolute;
+
+            width: 130px;
+            height: 130px;
+
+            top: -75px;
+            right: -55px;
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(circle,
+                    rgba(14, 171, 106, .22),
+                    transparent 70%);
+
+            opacity: 0;
+
+            transition:
+                opacity .4s ease,
+                transform .5s ease;
+
+            pointer-events: none;
+        }
+
+        .hero-pillar::after {
+            content: "";
+
+            position: absolute;
+            left: 15%;
+            right: 15%;
+            top: 0;
+            height: 1px;
+
+            background:
+                linear-gradient(90deg,
+                    transparent,
+                    rgba(217, 181, 124, .65),
+                    transparent);
+
+            opacity: .35;
+        }
+
+        @media (hover:hover) {
+
+            .hero-pillar:hover {
+                transform: translateY(-7px) scale(1.025);
+
+                border-color: rgba(14, 171, 106, .48);
+
+                background:
+                    linear-gradient(145deg,
+                        rgba(14, 171, 106, .09),
+                        rgba(255, 255, 255, .025));
+
+                box-shadow:
+                    0 14px 32px rgba(0, 0, 0, .18),
+                    0 0 24px rgba(14, 171, 106, .10);
+            }
+
+            .hero-pillar:hover::before {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+
+            .hero-pillar:hover .hero-pillar-name {
+                color: #F4EFE5;
+                transform: translateX(3px);
+            }
+        }
+
+        .hero-pillar:active {
+            transform: translateY(-3px) scale(.97);
+
+            border-color: rgba(14, 171, 106, .60);
+
+            box-shadow:
+                0 8px 24px rgba(0, 0, 0, .18),
+                0 0 25px rgba(14, 171, 106, .14);
+        }
+
+        .hero-pillar:active::before {
+            opacity: 1;
+        }
+
+        @media (max-width:700px) {
+
+            .hero-pillars {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 9px;
+            }
+
+            .hero-pillar {
+                min-height: 68px;
+            }
+        }
+
+        @media (max-width:420px) {
+
+            .hero-pillars {
+                gap: 7px;
+            }
+
+            .hero-pillar {
+                padding: 12px;
+                min-height: 64px;
+            }
+
+            .hero-pillar-name {
+                font-size: 11px;
+            }
+        }
+        /* =========================
+   AMBIENT FIREFLIES
+========================= */
+
+#ambient-fireflies {
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.ambient-firefly {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #0EAB6A;
+    opacity: 0;
+    box-shadow:
+        0 0 6px rgba(14, 171, 106, 0.9),
+        0 0 16px rgba(14, 171, 106, 0.45);
+    animation:
+        fireflyFloat var(--duration) ease-in-out infinite,
+        fireflyBlink var(--blink-duration) ease-in-out infinite;
+    animation-delay: var(--delay);
+}
+
+@keyframes fireflyFloat {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+
+    25% {
+        transform: translate3d(var(--move-x-1), var(--move-y-1), 0);
+    }
+
+    50% {
+        transform: translate3d(var(--move-x-2), var(--move-y-2), 0);
+    }
+
+    75% {
+        transform: translate3d(var(--move-x-3), var(--move-y-3), 0);
+    }
+
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes fireflyBlink {
+    0%,
+    100% {
+        opacity: 0;
+        filter: blur(0.2px);
+    }
+
+    20% {
+        opacity: 0.35;
+    }
+
+    50% {
+        opacity: 0.85;
+        filter: blur(0);
+    }
+
+    75% {
+        opacity: 0.25;
+    }
+}
+
+@media (max-width: 640px) {
+    .ambient-firefly {
+        width: 4px;
+        height: 4px;
+        box-shadow:
+            0 0 5px rgba(14, 171, 106, 0.75),
+            0 0 11px rgba(14, 171, 106, 0.35);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #ambient-fireflies {
+        display: none;
+    }
+}
+/* =========================================================
+   CINEMATIC FIREFLY WELCOME
+   ========================================================= */
+
+#firefly-welcome {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    overflow: hidden;
+    background:
+        radial-gradient(
+            circle at 50% 50%,
+            #0A5136 0%,
+            #062619 42%,
+            #020b07 100%
+        );
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+    transition:
+        opacity 1.2s cubic-bezier(.22,1,.36,1),
+        visibility 1.2s ease;
+}
+
+#firefly-welcome.is-ending {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+#firefly-welcome canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+#firefly-welcome::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(
+            circle at center,
+            transparent 20%,
+            rgba(0,0,0,.18) 65%,
+            rgba(0,0,0,.55) 100%
+        );
+    z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #firefly-welcome {
+        transition: opacity .4s ease;
+    }
+}
+/* Désactive visuellement l'ancienne intro */
+#intro-screen {
+    display: none !important;
+}
+    </style>
+</head>
+
+<body class="text-cream bg-emerald">
+    <!-- FIREFLY — COMPAGNON DU PORTFOLIO -->
+    <div id="portfolio-firefly" aria-hidden="true">
+        <span class="firefly-core"></span>
+        <span class="firefly-halo"></span>
+    </div>
+    <div id="ambient-fireflies" aria-hidden="true"></div>
+
+    <div id="cursor-glow"></div>
+
+    <!-- old intro-screen removed; cinematic firefly intro now rendered by script.js -->
+
+    <!-- Contenu principal -->
+    <div id="main-content" class="opacity-0">
+
+        <!-- Header -->
+        <!-- =====================================================
+     FLOATING BOTTOM DOCK
+===================================================== -->
+
+        <div class="bottom-dock-wrapper">
+
+            <nav id="bottom-dock" class="bottom-dock">
+
+                <div class="dock-goo"></div>
+
+                <a href="#home" class="dock-item active" data-section="home">
+
+                    <span class="dock-icon">⌂</span>
+                    <span class="dock-label">Accueil</span>
+
+                </a>
+
+                <a href="#about" class="dock-item" data-section="about">
+
+                    <span class="dock-icon">✦</span>
+                    <span class="dock-label">À propos</span>
+
+                </a>
+
+                <a href="#skills" class="dock-item" data-section="skills">
+
+                    <span class="dock-icon">⌘</span>
+                    <span class="dock-label">Skills</span>
+
+                </a>
+
+                <a href="#projects" class="dock-item" data-section="projects">
+
+                    <span class="dock-icon">◇</span>
+                    <span class="dock-label">Projets</span>
+
+                </a>
+
+                <a href="#contact" class="dock-item" data-section="contact">
+
+                    <span class="dock-icon">☏</span>
+                    <span class="dock-label">Contact</span>
+
+                </a>
+
+                <div class="dock-active-indicator"></div>
+
+            </nav>
+
+        </div>
+
+        <!-- Hero -->
+        <section id="home"
+            class="relative min-h-screen flex flex-col justify-center px-6 md:px-12 max-w-6xl mx-auto overflow-hidden">
+            <!-- HERO — lignes organiques -->
+            <div class="hero-organic-lines" aria-hidden="true">
+                <span class="hero-line hero-line-gold"></span>
+                <span class="hero-line hero-line-green"></span>
+            </div>
+            <canvas id="hero-3d" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+            <div class="relative z-10">
+                <div class="flex items-center gap-3 mb-5">
+                    <span class="w-2 h-2 rounded-full bg-accent shadow-[0_0_12px_#0EAB6A]"></span>
+
+                    <span class="text-accent text-xs tracking-[0.25em] uppercase">
+                        Available to build
+                    </span>
+                </div>
+                <div class="mb-4">
+                    <p class="text-gold text-sm tracking-[0.2em] uppercase">
+                        Bienvenue
+                    </p>
+                </div>
+
+                <h1 class="font-display
+           text-7xl md:text-9xl
+           leading-[0.85]
+           tracking-[-0.04em]
+           mb-7">
+                    Melior
+                </h1>
+
+                <p class="text-lg md:text-2xl
+          text-cream/65
+          max-w-2xl
+          leading-relaxed">
+
+                    Je transforme des idées en
+                    <span class="text-gold">
+                        expériences numériques
+                    </span>
+                    grâce au code, à l'IA et à une vision entrepreneuriale.
+
+                </p>
+                <div class="hero-pillars">
+
+                    <div class="hero-pillar">
+                        <span class="hero-pillar-number">01</span>
+                        <span class="hero-pillar-name">Software</span>
+                    </div>
+
+                    <div class="hero-pillar">
+                        <span class="hero-pillar-number">02</span>
+                        <span class="hero-pillar-name">Business IT</span>
+                    </div>
+
+                    <div class="hero-pillar">
+                        <span class="hero-pillar-number">03</span>
+                        <span class="hero-pillar-name">AI</span>
+                    </div>
+
+                    <div class="hero-pillar">
+                        <span class="hero-pillar-number">04</span>
+                        <span class="hero-pillar-name">Entrepreneurship</span>
+                    </div>
+
+                </div>
+                <div class="flex flex-wrap gap-10 mt-10
+            pt-6 max-w-xl
+            border-t border-gold/10">
+
+                    <div>
+
+                        <span class="block text-[10px]
+                 tracking-[0.2em]
+                 uppercase
+                 text-gold/60
+                 mb-1">
+                            Focus
+                        </span>
+
+                        <span class="text-sm text-cream/60">
+                            Technology &amp; Innovation
+                        </span>
+
+                    </div>
+
+
+                    <div>
+
+                        <span class="block text-[10px]
+                 tracking-[0.2em]
+                 uppercase
+                 text-gold/60
+                 mb-1">
+                            Status
+                        </span>
+
+                        <span class="text-sm text-accent">
+                            Building
+                        </span>
+
+                    </div>
+
+                </div>
+            </div>
+    </div>
+    </section>
+
+    <!-- =====================================================
+     PORTFOLIO CONTENT
+===================================================== -->
+
+    <main id="portfolio-content">
+
+        <div class="portfolio-scenes">
+
+            <!-- About: grande carte -->
+            <section id="about" class="portfolio-scene scene-about">
+                <div>
+                    <p class="text-gold text-xs tracking-[0.2em] uppercase mb-3">À propos</p>
+                    <h2 class="font-display text-2xl md:text-3xl mb-4">Qui suis-je</h2>
+                    <p class="text-cream/80 leading-relaxed">
+                        Étudiant en informatique et business IT, passionné par la technologie, le code
+                        et la création de communautés. J'aime transformer des idées en projets concrets,
+                        en combinant compétences techniques et vision entrepreneuriale, avec l'ambition
+                        de construire des solutions utiles pour un monde meilleur.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Skills -->
+            <section id="skills" class="portfolio-scene scene-skills">
+
+                <!-- Glow décoratif -->
+                <div class="absolute -top-24 -right-24
+              w-48 h-48
+              rounded-full
+              bg-accent/10
+              blur-3xl
+              pointer-events-none">
+                </div>
+
+                <div class="relative z-10">
+
+                    <p class="text-gold text-xs tracking-[0.2em] uppercase mb-3">
+                        Compétences
+                    </p>
+
+                    <div class="flex items-end justify-between gap-4 mb-7">
+
+                        <h2 class="font-display text-2xl md:text-3xl">
+                            Outils &amp; langages
+                        </h2>
+
+                        <span class="hidden sm:block
+                   text-[10px]
+                   tracking-[0.18em]
+                   uppercase
+                   text-cream/55">
+                            Toolkit
+                        </span>
+
+                    </div>
+
+
+                    <!-- Piliers -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-7">
+
+
+                        <!-- Software -->
+                        <div class="skill-pillar group
+                  rounded-2xl
+                  border border-gold/15
+                  bg-white/5
+                  backdrop-blur-md
+                  p-5
+                  transition-all duration-500
+                  hover:-translate-y-1
+                  hover:border-accent/40
+                  hover:bg-accent/5">
+
+                            <div class="flex items-start justify-between mb-5">
+
+                                <div class="w-10 h-10
+                      rounded-xl
+                      bg-gold/10
+                      border border-gold/20
+                      flex items-center justify-center
+                      text-gold
+                      transition-transform duration-500
+                      group-hover:scale-110">
+
+                                    &lt;/&gt;
+
+                                </div>
+
+                                <span class="text-[10px]
+                       tracking-[0.18em]
+                       uppercase
+                       text-cream/30">
+                                    01
+                                </span>
+
+                            </div>
+
+                            <h3 class="font-display text-xl mb-2">
+                                Software
+                            </h3>
+
+                            <p class="text-sm text-cream/75 leading-relaxed mb-4">
+                                Développement web, applications et expériences numériques.
+                            </p>
+
+                            <div class="flex flex-wrap gap-1.5">
+
+                                <span class="px-2 py-1 rounded-full
+                       bg-white/5
+                       border border-white/10
+                       text-[10px] text-cream/70">
+                                    JavaScript
+                                </span>
+
+                                <span class="px-2 py-1 rounded-full
+                       bg-white/5
+                       border border-white/10
+                       text-[10px] text-cream/70">
+                                    HTML
+                                </span>
+
+                                <span class="px-2 py-1 rounded-full
+                       bg-white/5
+                       border border-white/10
+                       text-[10px] text-cream/70">
+                                    CSS
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Business IT -->
+                        <div class="skill-pillar group
+                  rounded-2xl
+                  border border-gold/15
+                  bg-white/5
+                  backdrop-blur-md
+                  p-5
+                  transition-all duration-500
+                  hover:-translate-y-1
+                  hover:border-accent/40
+                  hover:bg-accent/5">
+
+                            <div class="flex items-start justify-between mb-5">
+
+                                <div class="w-10 h-10
+                      rounded-xl
+                      bg-gold/10
+                      border border-gold/20
+                      flex items-center justify-center
+                      text-gold
+                      transition-transform duration-500
+                      group-hover:scale-110">
+
+                                    ◇
+
+                                </div>
+
+                                <span class="text-[10px]
+                       tracking-[0.18em]
+                       uppercase
+                       text-cream/30">
+                                    02
+                                </span>
+
+                            </div>
+
+                            <h3 class="font-display text-xl mb-2">
+                                Business IT
+                            </h3>
+
+                            <p class="text-sm text-cream/75 leading-relaxed mb-4">
+                                Technologie, systèmes d'information et réflexion stratégique.
+                            </p>
+
+                            <div class="flex flex-wrap gap-1.5">
+
+                                <span class="px-2 py-1 rounded-full
+                       bg-white/5
+                       border border-white/10
+                       text-[10px] text-cream/70">
+                                    IT
+                                </span>
+
+                                <span class="px-2 py-1 rounded-full
+                       bg-white/5
+                       border border-white/10
+                       text-[10px] text-cream/70">
+                                    Strategy
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- AI -->
+                        <div class="skill-pillar group
+                  rounded-2xl
+                  border border-gold/15
+                  bg-white/5
+                  backdrop-blur-md
+                  p-5
+                  transition-all duration-500
+                  hover:-translate-y-1
+                  hover:border-accent/40
+                  hover:bg-accent/5">
+
+                            <div class="flex items-start justify-between mb-5">
+
+                                <div class="w-10 h-10
+                      rounded-xl
+                      bg-accent/10
+                      border border-accent/20
+                      flex items-center justify-center
+                      text-accent
+                      transition-transform duration-500
+                      group-hover:scale-110">
+
+                                    ✦
+
+                                </div>
+
+                                <span class="text-[10px]
+                       tracking-[0.18em]
+                       uppercase
+                       text-cream/30">
+                                    03
+                                </span>
+
+                            </div>
+
+                            <h3 class="font-display text-xl mb-2">
+                                AI
+                            </h3>
+
+                            <p class="text-sm text-cream/75 leading-relaxed mb-4">
+                                Intelligence artificielle et développement assisté par IA.
+                            </p>
+
+                            <div class="flex flex-wrap gap-1.5">
+
+                                <span class="px-2 py-1 rounded-full
+                       bg-white/5
+                       border border-white/10
+                       text-[10px] text-cream/70">
+                                    AI
+                                </span>
+
+                                <span class="px-2 py-1 rounded-full
+                       bg-white/5
+                       border border-white/10
+                       text-[10px] text-cream/70">
+                                    Automation
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- Entrepreneurship -->
+                        <div class="skill-pillar group
+                  rounded-2xl
+                  border border-gold/15
+                  bg-white/5
+                  backdrop-blur-md
+                  p-5
+                  transition-all duration-500
+                  hover:-translate-y-1
+                  hover:border-accent/40
+                  hover:bg-accent/5">
+
+                            <div class="flex items-start justify-between mb-5">
+
+                                <div class="w-10 h-10
+                      rounded-xl
+                      bg-gold/10
+                      border border-gold/20
+                      flex items-center justify-center
+                      text-gold
+                      transition-transform duration-500
+                      group-hover:scale-110">
+
+                                    ↗️
+
+                                </div>
+
+                                <span class="text-[10px]
+                       tracking-[0.18em]
+                       uppercase
+                       text-cream/30">
+                                    04
+                                </span>
+
+                            </div>
+
+                            <h3 class="font-display text-xl mb-2">
+                                Entrepreneurship
+                            </h3>
+
+                            <p class="text-sm text-cream/75 leading-relaxed mb-4">
+                                Transformer des idées en produits et projets concrets.
+                            </p>
+
+                            <div class="flex flex-wrap gap-1.5">
+
+                                <span class="px-2 py-1 rounded-full
+                       bg-white/5
+                       border border-white/10
+                       text-[10px] text-cream/70">
+                                    Innovation
+                                </span>
+
+                                <span class="px-2 py-1 rounded-full
+                       bg-white/5
+                       border border-white/10
+                       text-[10px] text-cream/70">
+                                    Products
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Technologies -->
+                    <div class="pt-5 border-t border-gold/10">
+
+                        <p class="text-[10px]
+                tracking-[0.18em]
+                uppercase
+                text-cream/55
+                mb-3">
+                            Technologies
+                        </p>
+
+                        <div class="flex flex-wrap gap-2">
+
+                            <span class="flex items-center gap-2
+                     px-3 py-1.5
+                     bg-white/5
+                     border border-gold/20
+                     rounded-full
+                     text-sm">
+
+                                <span class="w-5 h-5
+                       flex items-center justify-center
+                       rounded-full
+                       bg-gold
+                       text-emerald
+                       text-[10px]
+                       font-bold">
+                                    JS
+                                </span>
+
+                                JavaScript
+
+                            </span>
+
+
+                            <span class="flex items-center gap-2
+                     px-3 py-1.5
+                     bg-white/5
+                     border border-gold/20
+                     rounded-full
+                     text-sm">
+
+                                <span class="w-5 h-5
+                       flex items-center justify-center
+                       rounded-full
+                       bg-gold
+                       text-emerald
+                       text-[10px]
+                       font-bold">
+                                    PY
+                                </span>
+
+                                Python
+
+                            </span>
+
+
+                            <span class="flex items-center gap-2
+                     px-3 py-1.5
+                     bg-white/5
+                     border border-gold/20
+                     rounded-full
+                     text-sm">
+
+                                <span class="w-5 h-5
+                       flex items-center justify-center
+                       rounded-full
+                       bg-gold
+                       text-emerald
+                       text-[10px]
+                       font-bold">
+                                    N
+                                </span>
+
+                                Next.js
+
+                            </span>
+
+
+                            <span class="flex items-center gap-2
+                     px-3 py-1.5
+                     bg-white/5
+                     border border-gold/20
+                     rounded-full
+                     text-sm">
+
+                                <span class="w-5 h-5
+                       flex items-center justify-center
+                       rounded-full
+                       bg-gold
+                       text-emerald
+                       text-[10px]
+                       font-bold">
+                                    &lt;/&gt;
+                                </span>
+
+                                HTML5 &amp; CSS3
+
+                            </span>
+
+
+                            <span class="flex items-center gap-2
+                     px-3 py-1.5
+                     bg-white/5
+                     border border-gold/20
+                     rounded-full
+                     text-sm">
+
+                                <span class="w-5 h-5
+                       flex items-center justify-center
+                       rounded-full
+                       bg-accent
+                       text-emerald
+                       text-[10px]
+                       font-bold">
+                                    AI
+                                </span>
+
+                                Dev. assisté par IA
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =====================================================
+     PROJECTS
+===================================================== -->
+
+            <section id="projects" class="portfolio-scene scene-projects">
+                <p class="text-gold text-xs tracking-[0.2em] uppercase mb-3">Projets</p>
+                <h2 class="font-display text-2xl md:text-3xl mb-6">Mes réalisations</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+                    <div
+                        class="bento-card tilt-card bg-[#0A5136]/70 border border-gold/30 rounded-3xl overflow-hidden flex flex-col justify-between">
+                        <div class="project-visual project-visual-1 h-28 relative">
+                            <svg class="absolute inset-0 w-full h-full opacity-40" viewBox="0 0 200 100"
+                                preserveAspectRatio="none">
+                                <polyline points="0,80 30,50 55,65 80,25 110,45 140,15 170,40 200,10" fill="none"
+                                    stroke="#FBF9F5" stroke-width="1.5" />
+                            </svg>
+                        </div>
+                        <div class="p-8 pt-5 flex-1 flex flex-col justify-between">
+                            <div>
+                                <p class="text-gold text-xs tracking-[0.2em] uppercase mb-3">Projet</p>
+                                <h3 class="font-display text-xl mb-2">Guessing Quest</h3>
+                                <p class="project-desc text-cream/75 text-sm"><!-- PLACEHOLDER: description --></p>
+                            </div>
+                            <span class="project-tag">Bientôt disponible</span>
+                        </div>
+                    </div>
+
+                    <!-- Projet 2 -->
+                    <div
+                        class="bento-card tilt-card bg-[#0A5136]/70 border border-gold/30 rounded-3xl overflow-hidden flex flex-col justify-between">
+                        <div class="project-visual project-visual-2 h-28 relative">
+                            <svg class="absolute inset-0 w-full h-full opacity-40" viewBox="0 0 200 100"
+                                preserveAspectRatio="none">
+                                <circle cx="40" cy="50" r="22" fill="none" stroke="#FBF9F5" stroke-width="1.5" />
+                                <circle cx="120" cy="35" r="14" fill="none" stroke="#FBF9F5" stroke-width="1.5" />
+                                <circle cx="165" cy="70" r="9" fill="none" stroke="#FBF9F5" stroke-width="1.5" />
+                            </svg>
+                        </div>
+                        <div class="p-8 pt-5 flex-1 flex flex-col justify-between">
+                            <div>
+                                <p class="text-gold text-xs tracking-[0.2em] uppercase mb-3">Projet</p>
+                                <h3 class="font-display text-xl mb-2">Treasure Chest — Shopping Cart</h3>
+                                <p class="project-desc text-cream/75 text-sm"><!-- PLACEHOLDER: description --></p>
+                            </div>
+                            <span class="project-tag">Bientôt disponible</span>
+                        </div>
+                    </div>
+
+                    <!-- Citation décorative -->
+                    <div
+                        class="bento-card tilt-card md:col-span-2 bg-[#0A5136]/40 border border-gold/20 rounded-3xl p-6 flex items-center justify-center text-center">
+                        <p class="font-display text-lg text-cream/80 italic">« La technologie n'a de sens que si
+                            elle sert les gens. »
+                        </p>
+                    </div>
+
+                    <!-- Stat décorative -->
+                    <div
+                        class="bento-card tilt-card md:col-span-2 bg-gold/10 border border-gold/30 rounded-3xl p-6 flex flex-col items-center justify-center text-center">
+                        <span class="font-display text-4xl text-gold">2+</span>
+                        <span class="text-sm text-cream/70 mt-1">projets en développement</span>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Contact -->
+            <section id="contact" class="portfolio-scene scene-contact">
+                <div>
+                    <p class="text-gold text-xs tracking-[0.2em] uppercase mb-3">Contact</p>
+                    <h2 class="font-display text-2xl md:text-3xl">Discutons</h2>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <a href="mailto:orlinnkulu5@gmail.com"
+                        class="px-4 py-2 bg-cream/10 border border-gold/40 rounded-full text-sm hover:bg-gold hover:text-emerald transition-colors">orlinnkulu5@gmail.com</a>
+                    <a href="#"
+                        class="px-4 py-2 bg-cream/10 border border-gold/40 rounded-full text-sm hover:bg-gold hover:text-emerald transition-colors">GitHub</a>
+                    <a href="#"
+                        class="px-4 py-2 bg-cream/10 border border-gold/40 rounded-full text-sm hover:bg-gold hover:text-emerald transition-colors">LinkedIn</a>
+                </div>
+            </section>
+
+    </main>
+
+    <footer class="text-center py-10 text-emerald/50 text-sm">
+        ©️ 2026 Melior. Fait avec passion.
+    </footer>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html
