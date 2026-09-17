@@ -1,0 +1,1275 @@
+/* =========================================================
+   MELIOR — CINEMATIC FIREFLY INTRO
+   Sequence:
+   apparition → WELCOME → cercle → TO MY PORTFOLIO
+   → boule → dispersion finale → portfolio
+   ========================================================= */
+
+(() => {
+    if (document.getElementById('firefly-welcome')) return;
+
+    const intro = document.createElement('div');
+    intro.id = 'firefly-welcome';
+
+    const canvas = document.createElement('canvas');
+    canvas.id = 'firefly-welcome-canvas';
+
+    intro.appendChild(canvas);
+    document.body.appendChild(intro);
+
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+        intro.remove();
+        return;
+    }
+
+    const reducedMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+    ).matches;
+
+    const mainContent = document.getElementById('main-content');
+    const oldIntro = document.getElementById('intro-screen');
+
+    document.body.style.overflow = 'hidden';
+
+    if (mainContent) {
+        mainContent.style.opacity = '0';
+        mainContent.style.transition =
+            'opacity 1.05s cubic-bezier(.22,1,.36,1)';
+    }
+
+    if (oldIntro) {
+        oldIntro.style.display = 'none';
+    }
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    let particles = [];
+
+    const PARTICLE_COUNT_DESKTOP = 360;
+    const PARTICLE_COUNT_MOBILE = 190;
+
+    let particleCount =
+        width <= 640
+            ? PARTICLE_COUNT_MOBILE
+            : PARTICLE_COUNT_DESKTOP;
+
+    /* ---------------------------------------------------------
+       RESIZE
+       --------------------------------------------------------- */
+
+    function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        particleCount =
+            width <= 640
+                ? PARTICLE_COUNT_MOBILE
+                : PARTICLE_COUNT_DESKTOP;
+    }
+
+    resize();
+
+    window.addEventListener('resize', resize);
+
+    /* ---------------------------------------------------------
+       EASING
+       --------------------------------------------------------- */
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function lerp(a, b, t) {
+        return a + (b - a) * t;
+    }
+
+    function easeInOut(t) {
+        return t < 0.5
+            ? 4 * t * t * t
+            : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function easeOut(t) {
+        return 1 - Math.pow(1 - t, 3);
+    }
+
+    /* ---------------------------------------------------------
+       TEXT TARGET GENERATOR
+       --------------------------------------------------------- */
+
+    function createTextTargets(text) {
+        const offscreen = document.createElement('canvas');
+        const offCtx = offscreen.getContext('2d', {
+            willReadFrequently: true
+        });
+
+        if (!offCtx) return [];
+
+        const mobile = width <= 640;
+
+        let targetWidth = Math.min(
+            width * (mobile ? 0.92 : 0.88),
+            1250
+        );
+
+        let fontSize = mobile
+            ? Math.min(width * 0.145, 78)
+            : Math.min(width * 0.105, 122);
+
+        offscreen.width = Math.ceil(targetWidth);
+        offscreen.height = Math.ceil(height * 0.32);
+
+        offCtx.clearRect(
+            0,
+            0,
+            offscreen.width,
+            offscreen.height
+        );
+
+        offCtx.textAlign = 'center';
+        offCtx.textBaseline = 'middle';
+
+        offCtx.font =
+            `600 ${fontSize}px "Fraunces", serif`;
+
+        while (
+            offCtx.measureText(text).width > targetWidth &&
+            fontSize > 28
+        ) {
+            fontSize -= 2;
+
+            offCtx.font =
+                `600 ${fontSize}px "Fraunces", serif`;
+        }
+
+        offCtx.fillStyle = '#ffffff';
+
+        offCtx.fillText(
+            text,
+            offscreen.width / 2,
+            offscreen.height / 2
+        );
+
+        const imageData = offCtx.getImageData(
+            0,
+            0,
+            offscreen.width,
+            offscreen.height
+        );
+
+        const pixels = imageData.data;
+        const points = [];
+
+        const gap = mobile ? 5 : 6;
+
+        for (
+            let y = 0;
+            y < offscreen.height;
+            y += gap
+        ) {
+            for (
+                let x = 0;
+                x < offscreen.width;
+                x += gap
+            ) {
+                const index =
+                    (y * offscreen.width + x) * 4;
+
+                if (pixels[index + 3] > 100) {
+                    points.push({
+                        x:
+                            width / 2 -
+                            offscreen.width / 2 +
+                            x,
+
+                        y:
+                            height / 2 -
+                            offscreen.height / 2 +
+                            y
+                    });
+                }
+            }
+        }
+
+        if (points.length > particleCount) {
+            const result = [];
+            const step =
+                points.length / particleCount;
+
+            for (let i = 0; i < particleCount; i++) {
+                result.push(
+                    points[Math.floor(i * step)]
+                );
+            }
+
+            return result;
+        }
+
+        return points;
+    }
+
+    /* ---------------------------------------------------------
+       TARGETS
+       --------------------------------------------------------- */
+
+    let welcomeTargets = [];
+    let portfolioTargets = [];
+    let circleTargets = [];
+    let ballTargets = [];
+
+    function createCircleTargets() {
+        const targets = [];
+
+        const radius =
+            Math.min(width, height) *
+            (width <= 640 ? 0.18 : 0.21);
+
+        for (let i = 0; i < particleCount; i++) {
+            const angle =
+                (i / particleCount) *
+                Math.PI * 2;
+
+            /*
+             * Slight irregularity makes the circle feel
+             * organic instead of mathematically perfect.
+             */
+            const radiusVariation =
+                1 +
+                Math.sin(i * 2.37) * 0.035 +
+                Math.cos(i * 0.91) * 0.02;
+
+            targets.push({
+                x:
+                    width / 2 +
+                    Math.cos(angle) *
+                    radius *
+                    radiusVariation,
+
+                y:
+                    height / 2 +
+                    Math.sin(angle) *
+                    radius *
+                    radiusVariation
+            });
+        }
+
+        return targets;
+    }
+
+    function createBallTargets() {
+        const targets = [];
+
+        const radius =
+            Math.min(width, height) *
+            (width <= 640 ? 0.075 : 0.095);
+
+        for (let i = 0; i < particleCount; i++) {
+            /*
+             * Golden-angle distribution.
+             * This creates a natural luminous cluster.
+             */
+            const goldenAngle =
+                Math.PI *
+                (3 - Math.sqrt(5));
+
+            const angle =
+                i * goldenAngle;
+
+            const normalized =
+                Math.sqrt(
+                    (i + 0.5) / particleCount
+                );
+
+            const r =
+                radius *
+                normalized;
+
+            targets.push({
+                x:
+                    width / 2 +
+                    Math.cos(angle) * r,
+
+                y:
+                    height / 2 +
+                    Math.sin(angle) * r
+            });
+        }
+
+        return targets;
+    }
+
+    function rebuildTargets() {
+        welcomeTargets =
+            createTextTargets('WELCOME');
+
+        portfolioTargets =
+            createTextTargets(
+                'TO MY PORTFOLIO'
+            );
+
+        circleTargets =
+            createCircleTargets();
+
+        ballTargets =
+            createBallTargets();
+    }
+
+    rebuildTargets();
+
+    /* ---------------------------------------------------------
+       PARTICLES
+       --------------------------------------------------------- */
+
+    function createParticles() {
+        particles = [];
+
+        for (let i = 0; i < particleCount; i++) {
+            const welcome =
+                welcomeTargets[
+                    i % welcomeTargets.length
+                ];
+
+            const portfolio =
+                portfolioTargets[
+                    i % portfolioTargets.length
+                ];
+
+            const circle =
+                circleTargets[i];
+
+            const ball =
+                ballTargets[i];
+
+            /*
+             * IMPORTANT:
+             * Start positions are generated independently.
+             * Particles begin invisible and appear gradually.
+             */
+            const angle =
+                Math.random() *
+                Math.PI * 2;
+
+            const distance =
+                Math.random() *
+                    Math.min(width, height) *
+                    0.43 +
+                Math.min(width, height) *
+                    0.05;
+
+            particles.push({
+                x:
+                    width / 2 +
+                    Math.cos(angle) * distance,
+
+                y:
+                    height / 2 +
+                    Math.sin(angle) * distance,
+
+                startX:
+                    width / 2 +
+                    Math.cos(angle) * distance,
+
+                startY:
+                    height / 2 +
+                    Math.sin(angle) * distance,
+
+                welcomeX: welcome.x,
+                welcomeY: welcome.y,
+
+                circleX: circle.x,
+                circleY: circle.y,
+
+                portfolioX: portfolio.x,
+                portfolioY: portfolio.y,
+
+                ballX: ball.x,
+                ballY: ball.y,
+
+                size:
+                    Math.random() * 1.45 +
+                    0.75,
+
+                baseAlpha:
+                    Math.random() * 0.55 +
+                    0.45,
+
+                phase:
+                    Math.random() *
+                    Math.PI *
+                    2,
+
+                driftPhaseX:
+                    Math.random() *
+                    Math.PI *
+                    2,
+
+                driftPhaseY:
+                    Math.random() *
+                    Math.PI *
+                    2,
+
+                driftSpeedX:
+                    Math.random() *
+                        0.00055 +
+                    0.00035,
+
+                driftSpeedY:
+                    Math.random() *
+                        0.00065 +
+                    0.00035,
+
+                driftAmount:
+                    Math.random() * 1.8 +
+                    0.8,
+
+                brightness:
+                    Math.random() * 0.3 +
+                    0.85,
+
+                appearDelay:
+                    Math.random() * 850,
+
+                gold:
+                    Math.random() < 0.12
+            });
+        }
+    }
+
+    createParticles();
+
+    /* ---------------------------------------------------------
+       ORGANIC MOTION
+       --------------------------------------------------------- */
+
+    function getOrganicOffset(
+        particle,
+        time,
+        strength = 1
+    ) {
+        const x =
+            Math.sin(
+                time *
+                    particle.driftSpeedX +
+                    particle.driftPhaseX
+            ) *
+            particle.driftAmount *
+            strength;
+
+        const y =
+            Math.cos(
+                time *
+                    particle.driftSpeedY +
+                    particle.driftPhaseY
+            ) *
+            particle.driftAmount *
+            strength;
+
+        return { x, y };
+    }
+
+    /* ---------------------------------------------------------
+       DRAW PARTICLE
+       --------------------------------------------------------- */
+
+    function drawParticle(
+        particle,
+        x,
+        y,
+        alpha,
+        time
+    ) {
+        const pulse =
+            0.82 +
+            Math.sin(
+                time * 0.0022 +
+                particle.phase
+            ) *
+            0.18;
+
+        const size =
+            particle.size *
+            pulse;
+
+        const finalAlpha =
+            clamp(
+                alpha *
+                    particle.brightness,
+                0,
+                1
+            );
+
+        const color =
+            particle.gold
+                ? '#D9B57C'
+                : '#0EAB6A';
+
+        /* Soft halo */
+        ctx.beginPath();
+
+        ctx.fillStyle =
+            particle.gold
+                ? `rgba(217,181,124,${finalAlpha * 0.12})`
+                : `rgba(14,171,106,${finalAlpha * 0.12})`;
+
+        ctx.arc(
+            x,
+            y,
+            size * 4.5,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+        /* Core */
+        ctx.beginPath();
+
+        ctx.fillStyle = color;
+        ctx.globalAlpha = finalAlpha;
+
+        ctx.arc(
+            x,
+            y,
+            size,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+    }
+
+    /* ---------------------------------------------------------
+       TIMELINE
+       --------------------------------------------------------- */
+
+    const startTime =
+        performance.now();
+
+    /*
+     * The speed remains relatively quick.
+     * The middle transition is NOT a large dispersion.
+     */
+
+    const PHASE_APPEAR = 900;
+    const PHASE_WELCOME = 2650;
+    const PHASE_WELCOME_HOLD = 3300;
+
+    const PHASE_CIRCLE = 4050;
+    const PHASE_CIRCLE_HOLD = 4300;
+
+    const PHASE_PORTFOLIO = 5200;
+    const PHASE_PORTFOLIO_HOLD = 5750;
+
+    const PHASE_BALL = 6450;
+    const PHASE_BALL_HOLD = 6850;
+
+    const PHASE_EXIT = 7850;
+
+    /* ---------------------------------------------------------
+       ANIMATION
+       --------------------------------------------------------- */
+
+    function animate(now) {
+        const elapsed =
+            now - startTime;
+
+        ctx.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+        /* Subtle central atmosphere */
+        const atmosphere =
+            ctx.createRadialGradient(
+                width / 2,
+                height / 2,
+                0,
+                width / 2,
+                height / 2,
+                Math.max(width, height) *
+                    0.55
+            );
+
+        atmosphere.addColorStop(
+            0,
+            'rgba(14,171,106,0.035)'
+        );
+
+        atmosphere.addColorStop(
+            1,
+            'rgba(0,0,0,0)'
+        );
+
+        ctx.fillStyle = atmosphere;
+
+        ctx.fillRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+        particles.forEach(
+            (particle, index) => {
+                let x = particle.startX;
+                let y = particle.startY;
+
+                let alpha = 0;
+
+                const organic =
+                    getOrganicOffset(
+                        particle,
+                        elapsed,
+                        1
+                    );
+
+                /* ---------------------------------------------
+                   1 — APPEAR
+                   --------------------------------------------- */
+
+                if (elapsed < PHASE_APPEAR) {
+                    const local =
+                        clamp(
+                            (
+                                elapsed -
+                                particle.appearDelay
+                            ) / 420,
+                            0,
+                            1
+                        );
+
+                    alpha =
+                        easeOut(local) *
+                        particle.baseAlpha;
+
+                    /*
+                     * During appearance the particle
+                     * gently drifts instead of being frozen.
+                     */
+                    x =
+                        particle.startX +
+                        organic.x;
+
+                    y =
+                        particle.startY +
+                        organic.y;
+                }
+
+                /* ---------------------------------------------
+                   2 — FORM WELCOME
+                   --------------------------------------------- */
+
+                else if (
+                    elapsed <
+                    PHASE_WELCOME
+                ) {
+                    const progress =
+                        clamp(
+                            (
+                                elapsed -
+                                PHASE_APPEAR
+                            ) /
+                            (
+                                PHASE_WELCOME -
+                                PHASE_APPEAR
+                            ),
+                            0,
+                            1
+                        );
+
+                    /*
+                     * Slightly different progress per particle.
+                     * This prevents all particles from moving
+                     * exactly together.
+                     */
+                    const personalDelay =
+                        (
+                            (index % 17) /
+                            17
+                        ) *
+                        0.08;
+
+                    const localProgress =
+                        clamp(
+                            (
+                                progress -
+                                personalDelay
+                            ) /
+                            (1 - personalDelay),
+                            0,
+                            1
+                        );
+
+                    const eased =
+                        easeInOut(
+                            localProgress
+                        );
+
+                    const baseX =
+                        lerp(
+                            particle.startX,
+                            particle.welcomeX,
+                            eased
+                        );
+
+                    const baseY =
+                        lerp(
+                            particle.startY,
+                            particle.welcomeY,
+                            eased
+                        );
+
+                    x =
+                        baseX +
+                        organic.x *
+                        (1 - eased * 0.55);
+
+                    y =
+                        baseY +
+                        organic.y *
+                        (1 - eased * 0.55);
+
+                    alpha =
+                        particle.baseAlpha;
+                }
+
+                /* ---------------------------------------------
+                   3 — WELCOME HOLD
+                   --------------------------------------------- */
+
+                else if (
+                    elapsed <
+                    PHASE_WELCOME_HOLD
+                ) {
+                    const breathe =
+                        Math.sin(
+                            elapsed * 0.003 +
+                            particle.phase
+                        );
+
+                    x =
+                        particle.welcomeX +
+                        organic.x * 0.75 +
+                        breathe * 0.65;
+
+                    y =
+                        particle.welcomeY +
+                        organic.y * 0.75 +
+                        Math.cos(
+                            particle.phase
+                        ) *
+                        breathe *
+                        0.65;
+
+                    alpha =
+                        particle.baseAlpha *
+                        (
+                            0.9 +
+                            breathe * 0.1
+                        );
+                }
+
+                /* ---------------------------------------------
+                   4 — WELCOME → COMPACT CIRCLE
+                   --------------------------------------------- */
+
+                else if (
+                    elapsed <
+                    PHASE_CIRCLE
+                ) {
+                    const progress =
+                        clamp(
+                            (
+                                elapsed -
+                                PHASE_WELCOME_HOLD
+                            ) /
+                            (
+                                PHASE_CIRCLE -
+                                PHASE_WELCOME_HOLD
+                            ),
+                            0,
+                            1
+                        );
+
+                    const eased =
+                        easeInOut(progress);
+
+                    const baseX =
+                        lerp(
+                            particle.welcomeX,
+                            particle.circleX,
+                            eased
+                        );
+
+                    const baseY =
+                        lerp(
+                            particle.welcomeY,
+                            particle.circleY,
+                            eased
+                        );
+
+                    /*
+                     * IMPORTANT:
+                     * The movement stays around the center.
+                     * No explosion toward the edges.
+                     */
+                    const life =
+                        1 -
+                        Math.abs(
+                            progress - 0.5
+                        ) * 2;
+
+                    x =
+                        baseX +
+                        organic.x *
+                        (
+                            0.9 +
+                            life * 0.4
+                        );
+
+                    y =
+                        baseY +
+                        organic.y *
+                        (
+                            0.9 +
+                            life * 0.4
+                        );
+
+                    alpha =
+                        particle.baseAlpha;
+                }
+
+                /* ---------------------------------------------
+                   5 — CIRCLE HOLD
+                   --------------------------------------------- */
+
+                else if (
+                    elapsed <
+                    PHASE_CIRCLE_HOLD
+                ) {
+                    const orbit =
+                        elapsed *
+                        0.00035;
+
+                    const breathe =
+                        Math.sin(
+                            elapsed * 0.002 +
+                            particle.phase
+                        );
+
+                    x =
+                        particle.circleX +
+                        organic.x +
+                        Math.cos(
+                            particle.phase +
+                            orbit
+                        ) *
+                        breathe *
+                        1.2;
+
+                    y =
+                        particle.circleY +
+                        organic.y +
+                        Math.sin(
+                            particle.phase +
+                            orbit
+                        ) *
+                        breathe *
+                        1.2;
+
+                    alpha =
+                        particle.baseAlpha;
+                }
+
+                /* ---------------------------------------------
+                   6 — CIRCLE → TO MY PORTFOLIO
+                   --------------------------------------------- */
+
+                else if (
+                    elapsed <
+                    PHASE_PORTFOLIO
+                ) {
+                    const progress =
+                        clamp(
+                            (
+                                elapsed -
+                                PHASE_CIRCLE_HOLD
+                            ) /
+                            (
+                                PHASE_PORTFOLIO -
+                                PHASE_CIRCLE_HOLD
+                            ),
+                            0,
+                            1
+                        );
+
+                    /*
+                     * Each particle has a slightly different
+                     * start point on the circle.
+                     */
+                    const personal =
+                        (
+                            (index % 23) /
+                            23
+                        ) *
+                        0.07;
+
+                    const localProgress =
+                        clamp(
+                            (
+                                progress -
+                                personal
+                            ) /
+                            (1 - personal),
+                            0,
+                            1
+                        );
+
+                    const eased =
+                        easeInOut(
+                            localProgress
+                        );
+
+                    const baseX =
+                        lerp(
+                            particle.circleX,
+                            particle.portfolioX,
+                            eased
+                        );
+
+                    const baseY =
+                        lerp(
+                            particle.circleY,
+                            particle.portfolioY,
+                            eased
+                        );
+
+                    x =
+                        baseX +
+                        organic.x *
+                        (1 - eased * 0.45);
+
+                    y =
+                        baseY +
+                        organic.y *
+                        (1 - eased * 0.45);
+
+                    alpha =
+                        particle.baseAlpha;
+                }
+
+                /* ---------------------------------------------
+                   7 — TO MY PORTFOLIO HOLD
+                   --------------------------------------------- */
+
+                else if (
+                    elapsed <
+                    PHASE_PORTFOLIO_HOLD
+                ) {
+                    const breathe =
+                        Math.sin(
+                            elapsed * 0.0024 +
+                            particle.phase
+                        );
+
+                    x =
+                        particle.portfolioX +
+                        organic.x * 0.75 +
+                        breathe * 0.55;
+
+                    y =
+                        particle.portfolioY +
+                        organic.y * 0.75 +
+                        Math.cos(
+                            particle.phase
+                        ) *
+                        breathe *
+                        0.55;
+
+                    alpha =
+                        particle.baseAlpha *
+                        (
+                            0.92 +
+                            breathe * 0.08
+                        );
+                }
+
+                /* ---------------------------------------------
+                   8 — TO MY PORTFOLIO → BALL
+                   --------------------------------------------- */
+
+                else if (
+                    elapsed <
+                    PHASE_BALL
+                ) {
+                    const progress =
+                        clamp(
+                            (
+                                elapsed -
+                                PHASE_PORTFOLIO_HOLD
+                            ) /
+                            (
+                                PHASE_BALL -
+                                PHASE_PORTFOLIO_HOLD
+                            ),
+                            0,
+                            1
+                        );
+
+                    const eased =
+                        easeInOut(progress);
+
+                    const baseX =
+                        lerp(
+                            particle.portfolioX,
+                            particle.ballX,
+                            eased
+                        );
+
+                    const baseY =
+                        lerp(
+                            particle.portfolioY,
+                            particle.ballY,
+                            eased
+                        );
+
+                    x =
+                        baseX +
+                        organic.x *
+                        (
+                            1 -
+                            eased * 0.7
+                        );
+
+                    y =
+                        baseY +
+                        organic.y *
+                        (
+                            1 -
+                            eased * 0.7
+                        );
+
+                    alpha =
+                        particle.baseAlpha;
+                }
+
+                /* ---------------------------------------------
+                   9 — BALL HOLD
+                   --------------------------------------------- */
+
+                else if (
+                    elapsed <
+                    PHASE_BALL_HOLD
+                ) {
+                    const breathe =
+                        Math.sin(
+                            elapsed * 0.003 +
+                            particle.phase
+                        );
+
+                    x =
+                        particle.ballX +
+                        organic.x * 0.65 +
+                        breathe * 0.45;
+
+                    y =
+                        particle.ballY +
+                        organic.y * 0.65 +
+                        Math.cos(
+                            particle.phase
+                        ) *
+                        breathe *
+                        0.45;
+
+                    alpha =
+                        particle.baseAlpha;
+                }
+
+                /* ---------------------------------------------
+                   10 — FINAL DISPERSION
+                   --------------------------------------------- */
+
+                else if (
+                    elapsed <
+                    PHASE_EXIT
+                ) {
+                    const progress =
+                        clamp(
+                            (
+                                elapsed -
+                                PHASE_BALL_HOLD
+                            ) /
+                            (
+                                PHASE_EXIT -
+                                PHASE_BALL_HOLD
+                            ),
+                            0,
+                            1
+                        );
+
+                    const eased =
+                        easeInOut(progress);
+
+                    const angle =
+                        particle.phase +
+                        index * 0.075;
+
+                    /*
+                     * Final dispersion is intentionally
+                     * different from the middle transition.
+                     * Here the particles really leave.
+                     */
+                    const radius =
+                        eased *
+                        (
+                            Math.min(
+                                width,
+                                height
+                            ) *
+                            0.72 +
+                            (index % 9) *
+                            38
+                        );
+
+                    x =
+                        particle.ballX +
+                        Math.cos(angle) *
+                        radius +
+                        organic.x *
+                        (1 - eased);
+
+                    y =
+                        particle.ballY +
+                        Math.sin(angle) *
+                        radius +
+                        organic.y *
+                        (1 - eased);
+
+                    alpha =
+                        particle.baseAlpha *
+                        (1 - eased);
+                }
+
+                /* ---------------------------------------------
+                   11 — END
+                   --------------------------------------------- */
+
+                else {
+                    alpha = 0;
+                }
+
+                drawParticle(
+                    particle,
+                    x,
+                    y,
+                    alpha,
+                    elapsed
+                );
+            }
+        );
+
+        /*
+         * Start revealing the portfolio BEFORE the particles
+         * have completely disappeared.
+         *
+         * This removes the empty gap at the end.
+         */
+        if (
+            elapsed >=
+            PHASE_BALL_HOLD + 260
+        ) {
+            const revealProgress =
+                clamp(
+                    (
+                        elapsed -
+                        (
+                            PHASE_BALL_HOLD +
+                            260
+                        )
+                    ) /
+                    1250,
+                    0,
+                    1
+                );
+
+            if (mainContent) {
+                mainContent.style.opacity =
+                    String(
+                        easeInOut(
+                            revealProgress
+                        )
+                    );
+            }
+        }
+
+        if (
+            elapsed >=
+            PHASE_EXIT
+        ) {
+            finishIntro();
+            return;
+        }
+
+        requestAnimationFrame(
+            animate
+        );
+    }
+
+    /* ---------------------------------------------------------
+       FINISH
+       --------------------------------------------------------- */
+
+    function finishIntro() {
+        if (mainContent) {
+            mainContent.style.opacity = '1';
+        }
+
+        intro.classList.add('is-ending');
+
+        setTimeout(() => {
+            document.body.style.overflow = '';
+
+            intro.remove();
+
+            window.removeEventListener(
+                'resize',
+                resize
+            );
+        }, 850);
+    }
+
+    /* ---------------------------------------------------------
+       REDUCED MOTION
+       --------------------------------------------------------- */
+
+    if (reducedMotion) {
+        if (mainContent) {
+            mainContent.style.opacity = '1';
+        }
+
+        finishIntro();
+        return;
+    }
+
+    requestAnimationFrame(
+        animate
+    );
+})();
